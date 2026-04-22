@@ -1,5 +1,19 @@
 import Link from "next/link";
-import { fetchAgent, modelLabel, type Agent } from "../lib";
+import { fetchAgent, modelLabel, safeText, type Agent } from "../lib";
+
+function safeDate(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  const d = new Date(value);
+  return Number.isNaN(d.getTime()) ? null : d.toLocaleString();
+}
+
+function safeJson(value: unknown): string {
+  try {
+    return JSON.stringify(value, null, 2);
+  } catch {
+    return "[unserializable]";
+  }
+}
 
 export const dynamic = "force-dynamic";
 
@@ -37,27 +51,31 @@ export default async function AgentDetailPage({
 }
 
 function AgentView({ agent }: { agent: Agent }) {
-  const prompt = agent.system_prompt ?? agent.instructions ?? null;
+  const rawPrompt = agent?.system_prompt ?? agent?.instructions ?? null;
+  const prompt = typeof rawPrompt === "string" ? rawPrompt : safeText(rawPrompt, "");
+  const updated = safeDate(agent?.updated_at);
   return (
     <div className="space-y-8">
       <div>
         <h1 className="text-2xl font-medium tracking-tight text-white">
-          {agent.name || "(unnamed agent)"}
+          {safeText(agent?.name, "(unnamed agent)")}
         </h1>
         <div className="mt-2 flex flex-wrap gap-4 text-xs text-zinc-500">
-          <span className="font-mono">{agent.id}</span>
-          {agent.model && <span className="font-mono">{modelLabel(agent.model)}</span>}
-          {agent.updated_at && (
-            <span>Updated {new Date(agent.updated_at).toLocaleString()}</span>
+          <span className="font-mono">{safeText(agent?.id)}</span>
+          {agent?.model != null && (
+            <span className="font-mono">{modelLabel(agent.model)}</span>
           )}
-          {agent.archived_at && (
+          {updated && <span>Updated {updated}</span>}
+          {agent?.archived_at && (
             <span className="rounded bg-zinc-800 px-1.5 py-0.5 uppercase tracking-wider text-zinc-400">
               archived
             </span>
           )}
         </div>
-        {agent.description && (
-          <p className="mt-4 max-w-3xl text-sm text-zinc-400">{agent.description}</p>
+        {agent?.description && (
+          <p className="mt-4 max-w-3xl text-sm text-zinc-400">
+            {safeText(agent.description, "")}
+          </p>
         )}
       </div>
 
@@ -81,7 +99,7 @@ function AgentView({ agent }: { agent: Agent }) {
           Raw
         </h2>
         <pre className="overflow-auto rounded-lg border border-zinc-800 bg-zinc-950 p-4 text-xs text-zinc-400">
-          {JSON.stringify(agent, null, 2)}
+          {safeJson(agent)}
         </pre>
       </section>
     </div>

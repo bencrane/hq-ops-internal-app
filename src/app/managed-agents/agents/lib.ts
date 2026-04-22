@@ -66,6 +66,25 @@ export function modelLabel(model: Agent["model"]): string {
   return model.id || "—";
 }
 
+/**
+ * Coerce any value into something React can safely render as text.
+ * Strings/numbers/booleans render as-is; objects and arrays are
+ * JSON-stringified. Never throws. Use at every rendering site that
+ * reads a field from an untrusted upstream response.
+ */
+export function safeText(value: unknown, fallback = "—"): string {
+  if (value === null || value === undefined) return fallback;
+  if (typeof value === "string") return value || fallback;
+  if (typeof value === "number" || typeof value === "boolean") {
+    return String(value);
+  }
+  try {
+    return JSON.stringify(value);
+  } catch {
+    return fallback;
+  }
+}
+
 export async function fetchAgents(): Promise<FetchResult<{ data: Agent[] }>> {
   return callBackend("/agents") as Promise<FetchResult<{ data: Agent[] }>>;
 }
