@@ -1,5 +1,14 @@
 import "server-only";
+import type { components } from "@/lib/api-types";
 
+export type AgentDefaults = components["schemas"]["AgentDefaults"];
+export type AgentDefaultsPayload = components["schemas"]["AgentDefaultsPayload"];
+
+/**
+ * The backend does not normalize Anthropic's agent shape — everything is
+ * passthrough. We declare only the fields the UI relies on; everything else
+ * is tolerated (and dumped raw in the detail view).
+ */
 export type Agent = {
   id: string;
   name?: string | null;
@@ -14,6 +23,8 @@ export type Agent = {
   [key: string]: unknown;
 };
 
+export type AgentListResponse = { data: Agent[]; count?: number };
+
 export type FetchResult<T> =
   | { ok: true; data: T }
   | { ok: false; status: number; error: string };
@@ -24,7 +35,10 @@ function backendConfig(): { baseUrl: string; token: string } | null {
   return { baseUrl: MAG_API_BASE_URL.replace(/\/$/, ""), token: MAG_AUTH_TOKEN };
 }
 
-async function callBackend(path: string): Promise<FetchResult<unknown>> {
+async function callBackend<T>(
+  path: string,
+  init?: RequestInit
+): Promise<FetchResult<T>> {
   const cfg = backendConfig();
   if (!cfg) {
     return {
@@ -37,7 +51,12 @@ async function callBackend(path: string): Promise<FetchResult<unknown>> {
   let res: Response;
   try {
     res = await fetch(`${cfg.baseUrl}${path}`, {
-      headers: { Authorization: `Bearer ${cfg.token}` },
+      ...init,
+      headers: {
+        Authorization: `Bearer ${cfg.token}`,
+        "Content-Type": "application/json",
+        ...(init?.headers ?? {}),
+      },
       cache: "no-store",
     });
   } catch (err) {
@@ -51,11 +70,10 @@ async function callBackend(path: string): Promise<FetchResult<unknown>> {
   }
 
   const text = await res.text();
-  if (!res.ok) {
-    return { ok: false, status: res.status, error: text };
-  }
+  if (!res.ok) return { ok: false, status: res.status, error: text };
+  if (!text) return { ok: true, data: undefined as T };
   try {
-    return { ok: true, data: JSON.parse(text) };
+    return { ok: true, data: JSON.parse(text) as T };
   } catch {
     return { ok: false, status: res.status, error: `Invalid JSON: ${text}` };
   }
@@ -67,18 +85,10 @@ export function modelLabel(model: Agent["model"]): string {
   return model.id || "—";
 }
 
-/**
- * Coerce any value into something React can safely render as text.
- * Strings/numbers/booleans render as-is; objects and arrays are
- * JSON-stringified. Never throws. Use at every rendering site that
- * reads a field from an untrusted upstream response.
- */
 export function safeText(value: unknown, fallback = "—"): string {
   if (value === null || value === undefined) return fallback;
   if (typeof value === "string") return value || fallback;
-  if (typeof value === "number" || typeof value === "boolean") {
-    return String(value);
-  }
+  if (typeof value === "number" || typeof value === "boolean") return String(value);
   try {
     return JSON.stringify(value);
   } catch {
@@ -86,12 +96,16 @@ export function safeText(value: unknown, fallback = "—"): string {
   }
 }
 
-export async function fetchAgents(): Promise<FetchResult<{ data: Agent[] }>> {
-  return callBackend("/agents") as Promise<FetchResult<{ data: Agent[] }>>;
+export function fetchAgents() {
+  return callBackend<AgentListResponse>("/agents");
 }
 
-export async function fetchAgent(id: string): Promise<FetchResult<Agent>> {
-  return callBackend(`/agents/${encodeURIComponent(id)}`) as Promise<
-    FetchResult<Agent>
-  >;
+export function fetchAgent(id: string) {
+  return callBackend<Agent>(`/agents/${encodeURIComponent(id)}`);
+}
+
+export function fetchAgentDefaults(id: string) {
+  return callBackend<AgentDefaults>(
+    `/agents/${encodeURIComponent(id)}/defaults`
+  );
 }

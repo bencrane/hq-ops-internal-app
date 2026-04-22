@@ -1,5 +1,13 @@
 import Link from "next/link";
-import { fetchAgent, modelLabel, safeText, type Agent } from "../lib";
+import {
+  fetchAgent,
+  fetchAgentDefaults,
+  modelLabel,
+  safeText,
+  type Agent,
+  type AgentDefaults,
+} from "../lib";
+import { DefaultsEditor } from "./DefaultsEditor";
 
 function safeDate(value: unknown): string | null {
   if (typeof value !== "string") return null;
@@ -23,7 +31,18 @@ export default async function AgentDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const result = await fetchAgent(id);
+  const [result, defaultsResult] = await Promise.all([
+    fetchAgent(id),
+    fetchAgentDefaults(id),
+  ]);
+
+  const defaults: AgentDefaults | null = defaultsResult.ok
+    ? defaultsResult.data
+    : null;
+  const defaultsError =
+    !defaultsResult.ok && defaultsResult.status !== 404
+      ? { status: defaultsResult.status, error: defaultsResult.error }
+      : null;
 
   return (
     <div className="p-8 sm:p-12 lg:p-16">
@@ -45,12 +64,29 @@ export default async function AgentDetailPage({
         </div>
       )}
 
-      {result.ok && <AgentView agent={result.data} />}
+      {result.ok && (
+        <AgentView
+          agent={result.data}
+          agentId={id}
+          defaults={defaults}
+          defaultsError={defaultsError}
+        />
+      )}
     </div>
   );
 }
 
-function AgentView({ agent }: { agent: Agent }) {
+function AgentView({
+  agent,
+  agentId,
+  defaults,
+  defaultsError,
+}: {
+  agent: Agent;
+  agentId: string;
+  defaults: AgentDefaults | null;
+  defaultsError: { status: number; error: string } | null;
+}) {
   const rawPrompt =
     agent?.system ?? agent?.system_prompt ?? agent?.instructions ?? null;
   const prompt = typeof rawPrompt === "string" ? rawPrompt : safeText(rawPrompt, "");
@@ -93,6 +129,19 @@ function AgentView({ agent }: { agent: Agent }) {
             No system prompt set.
           </div>
         )}
+      </section>
+
+      <section>
+        <h2 className="mb-3 text-xs font-medium uppercase tracking-wider text-zinc-500">
+          Defaults
+        </h2>
+        <div className="rounded-lg border border-zinc-800 bg-zinc-950 p-4">
+          <DefaultsEditor
+            agentId={agentId}
+            initial={defaults}
+            initialError={defaultsError}
+          />
+        </div>
       </section>
 
       <section>
