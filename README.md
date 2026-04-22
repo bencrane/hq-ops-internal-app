@@ -1,36 +1,52 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# hq-ops-internal-app
 
-## Getting Started
+Next.js 16 app deployed to Railway via Docker, with [Doppler](https://doppler.com) as the single source of truth for secrets.
 
-First, run the development server:
+## Local development
+
+One-time setup:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+brew install dopplerhq/cli/doppler
+doppler login
+doppler setup   # select the project, config: prd
+npm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Run the dev server (secrets injected by Doppler):
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+doppler run -- npm run dev
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Open [http://localhost:3000](http://localhost:3000).
 
-## Learn More
+## Production (Railway)
 
-To learn more about Next.js, take a look at the following resources:
+- Platform: Railway, Docker builder (`Dockerfile` at repo root, config in `railway.toml`).
+- Runtime listens on port **8080**. Map Railway's public networking / custom domain to 8080.
+- The **only** Railway env var required is `DOPPLER_TOKEN` — a Doppler service token scoped to the `prd` config. Everything else is pulled from Doppler at container start via `doppler run --`.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### Rotating secrets
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+1. Update the value in Doppler (`prd` config).
+2. Redeploy the Railway service (Railway caches the image; a redeploy re-runs the CMD and re-fetches secrets).
 
-## Deploy on Vercel
+### Rotating the Doppler token
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+1. Generate a new service token in Doppler → Project → `prd` → Service Tokens.
+2. Update `DOPPLER_TOKEN` in Railway Variables.
+3. Redeploy.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Testing the Docker image locally
+
+```bash
+docker build -t hq-ops-internal-app .
+docker run --rm -p 8080:8080 -e DOPPLER_TOKEN=<your-token> hq-ops-internal-app
+# visit http://localhost:8080
+```
+
+## Project conventions
+
+- No `.env` / `.env.example` in the repo. The secret contract lives in Doppler (`prd` config) plus whatever reads `process.env.*` in code.
+- Do not add new Railway env vars. Add the secret to Doppler instead.
