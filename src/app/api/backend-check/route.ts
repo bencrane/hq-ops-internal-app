@@ -3,7 +3,15 @@ import { NextResponse } from "next/server";
 export async function GET() {
   try {
     const MAG_AUTH_TOKEN = process.env.MAG_AUTH_TOKEN;
-    const BASE_URL = process.env.API_BASE_URL || "http://localhost:8080";
+    const BASE_URL = process.env.MAG_API_BASE_URL;
+
+    if (!BASE_URL) {
+      console.error("MAG_API_BASE_URL is missing from environment variables.");
+      return NextResponse.json(
+        { error: "MAG_API_BASE_URL is not configured" },
+        { status: 500 }
+      );
+    }
 
     if (!MAG_AUTH_TOKEN) {
       console.error("MAG_AUTH_TOKEN is missing from environment variables.");
