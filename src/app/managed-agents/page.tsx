@@ -1,74 +1,36 @@
-"use client";
-
 import Link from "next/link";
-import { useState } from "react";
 
-type CheckResult = {
-  ok: boolean;
-  status: number;
-  data: unknown;
-};
+const cards = [
+  {
+    href: "/managed-agents/agents",
+    title: "View All",
+    description: "Browse every managed agent and inspect its system prompt & settings.",
+  },
+  {
+    href: "/managed-agents/debug",
+    title: "Debug",
+    description: "Test backend connectivity and auth against managed-agents-x-api.",
+  },
+];
 
 export default function ManagedAgentsPage() {
-  const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<CheckResult | null>(null);
-
-  async function runCheck() {
-    setLoading(true);
-    setResult(null);
-    try {
-      const res = await fetch("/api/backend-check", { cache: "no-store" });
-      const data = await res.json().catch(() => ({ error: "Invalid JSON response" }));
-      setResult({ ok: res.ok, status: res.status, data });
-    } catch (err) {
-      setResult({
-        ok: false,
-        status: 0,
-        data: { error: err instanceof Error ? err.message : String(err) },
-      });
-    } finally {
-      setLoading(false);
-    }
-  }
-
   return (
-    <div className="min-h-screen bg-black p-8 sm:p-12 lg:p-16">
-      <div className="flex items-center justify-between">
-        <h1 className="text-xl font-medium tracking-wide text-white">
-          Managed Agents
-        </h1>
-
-        <Link
-          href="/"
-          className="text-sm font-medium text-zinc-400 transition-colors hover:text-white"
-        >
-          ← Back to Operations
-        </Link>
-      </div>
-
-      <div className="mt-10 max-w-2xl">
-        <button
-          onClick={runCheck}
-          disabled={loading}
-          className="rounded-lg border border-zinc-700 bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:border-zinc-500 hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          {loading ? "Testing…" : "Test backend connection"}
-        </button>
-
-        {result && (
-          <div className="mt-6">
-            <div
-              className={`mb-2 text-sm font-medium ${
-                result.ok ? "text-emerald-400" : "text-red-400"
-              }`}
-            >
-              {result.ok ? "✓ Success" : "✗ Failed"} ({result.status})
-            </div>
-            <pre className="overflow-auto rounded-lg border border-zinc-800 bg-zinc-950 p-4 text-xs text-zinc-300">
-              {JSON.stringify(result.data, null, 2)}
-            </pre>
-          </div>
-        )}
+    <div className="p-8 sm:p-12 lg:p-16">
+      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        {cards.map((card) => (
+          <Link
+            key={card.href}
+            href={card.href}
+            className="group flex aspect-video flex-col justify-between rounded-xl border border-zinc-800 bg-zinc-900/50 p-6 transition-all hover:border-zinc-700 hover:bg-zinc-800/80 active:scale-[0.98]"
+          >
+            <span className="text-lg font-medium tracking-wide text-white">
+              {card.title}
+            </span>
+            <span className="text-sm leading-relaxed text-zinc-400">
+              {card.description}
+            </span>
+          </Link>
+        ))}
       </div>
     </div>
   );
