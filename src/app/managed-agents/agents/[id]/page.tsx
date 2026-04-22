@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { fetchAgent, type Agent } from "../lib";
+import { fetchAgent, modelLabel, type Agent } from "../lib";
 
 export const dynamic = "force-dynamic";
 
@@ -46,7 +46,7 @@ function AgentView({ agent }: { agent: Agent }) {
         </h1>
         <div className="mt-2 flex flex-wrap gap-4 text-xs text-zinc-500">
           <span className="font-mono">{agent.id}</span>
-          {agent.model && <span className="font-mono">{agent.model}</span>}
+          {agent.model && <span className="font-mono">{modelLabel(agent.model)}</span>}
           {agent.updated_at && (
             <span>Updated {new Date(agent.updated_at).toLocaleString()}</span>
           )}

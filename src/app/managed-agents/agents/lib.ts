@@ -4,7 +4,7 @@ export type Agent = {
   id: string;
   name?: string | null;
   description?: string | null;
-  model?: string | null;
+  model?: string | { id?: string; speed?: string } | null;
   system_prompt?: string | null;
   instructions?: string | null;
   created_at?: string | null;
@@ -58,6 +58,12 @@ async function callBackend(path: string): Promise<FetchResult<unknown>> {
   } catch {
     return { ok: false, status: res.status, error: `Invalid JSON: ${text}` };
   }
+}
+
+export function modelLabel(model: Agent["model"]): string {
+  if (!model) return "—";
+  if (typeof model === "string") return model;
+  return model.id || "—";
 }
 
 export async function fetchAgents(): Promise<FetchResult<{ data: Agent[] }>> {

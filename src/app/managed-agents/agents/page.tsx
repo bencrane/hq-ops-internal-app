@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { fetchAgents } from "./lib";
+import { fetchAgents, modelLabel } from "./lib";
 
 export const dynamic = "force-dynamic";
 
@@ -60,7 +60,7 @@ export default async function AgentsListPage() {
                     )}
                   </td>
                   <td className="px-4 py-3 font-mono text-xs text-zinc-400">
-                    {agent.model || "—"}
+                    {modelLabel(agent.model)}
                   </td>
                   <td className="px-4 py-3 font-mono text-xs text-zinc-500">
                     {agent.id}
