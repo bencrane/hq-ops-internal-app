@@ -1,37 +1,5 @@
 import Link from "next/link";
-import { headers } from "next/headers";
-
-type Agent = {
-  id: string;
-  name?: string | null;
-  description?: string | null;
-  model?: string | null;
-  system_prompt?: string | null;
-  instructions?: string | null;
-  tools?: unknown;
-  skills?: unknown;
-  created_at?: string | null;
-  updated_at?: string | null;
-  archived_at?: string | null;
-  [key: string]: unknown;
-};
-
-async function fetchAgent(
-  id: string
-): Promise<{ ok: true; agent: Agent } | { ok: false; status: number; error: string }> {
-  const h = await headers();
-  const host = h.get("host");
-  const proto = h.get("x-forwarded-proto") ?? "http";
-  const res = await fetch(
-    `${proto}://${host}/api/agents/${encodeURIComponent(id)}`,
-    { cache: "no-store" }
-  );
-  if (!res.ok) {
-    const text = await res.text();
-    return { ok: false, status: res.status, error: text };
-  }
-  return { ok: true, agent: await res.json() };
-}
+import { fetchAgent, type Agent } from "../lib";
 
 export const dynamic = "force-dynamic";
 
@@ -54,14 +22,16 @@ export default async function AgentDetailPage({
 
       {!result.ok && (
         <div className="rounded-lg border border-red-900/50 bg-red-950/20 p-4 text-sm text-red-300">
-          <div className="font-medium">Failed to load agent ({result.status})</div>
-          <pre className="mt-2 overflow-auto text-xs text-red-400/80">
+          <div className="font-medium">
+            Failed to load agent ({result.status || "network error"})
+          </div>
+          <pre className="mt-2 overflow-auto whitespace-pre-wrap text-xs text-red-400/80">
             {result.error}
           </pre>
         </div>
       )}
 
-      {result.ok && <AgentView agent={result.agent} />}
+      {result.ok && <AgentView agent={result.data} />}
     </div>
   );
 }
