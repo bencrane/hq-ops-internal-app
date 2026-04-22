@@ -51,7 +51,8 @@ export default async function AgentDetailPage({
 }
 
 function AgentView({ agent }: { agent: Agent }) {
-  const rawPrompt = agent?.system_prompt ?? agent?.instructions ?? null;
+  const rawPrompt =
+    agent?.system ?? agent?.system_prompt ?? agent?.instructions ?? null;
   const prompt = typeof rawPrompt === "string" ? rawPrompt : safeText(rawPrompt, "");
   const updated = safeDate(agent?.updated_at);
   return (

@@ -5,6 +5,7 @@ export type Agent = {
   name?: string | null;
   description?: string | null;
   model?: string | { id?: string; speed?: string } | null;
+  system?: string | null;
   system_prompt?: string | null;
   instructions?: string | null;
   created_at?: string | null;
