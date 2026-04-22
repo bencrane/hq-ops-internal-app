@@ -21,7 +21,8 @@ WORKDIR /app
 ENV NODE_ENV=production \
     NEXT_TELEMETRY_DISABLED=1 \
     PORT=8080 \
-    HOSTNAME=0.0.0.0
+    HOSTNAME=0.0.0.0 \
+    HOME=/home/nextjs
 
 RUN apt-get update \
  && apt-get install -y --no-install-recommends \
@@ -38,7 +39,9 @@ RUN apt-get update \
  && rm -rf /var/lib/apt/lists/*
 
 RUN groupadd --system --gid 1001 nodejs \
- && useradd  --system --uid 1001 --gid nodejs nextjs
+ && useradd --system --uid 1001 --gid nodejs --create-home --home-dir /home/nextjs nextjs \
+ && mkdir -p /home/nextjs/.doppler \
+ && chown -R nextjs:nodejs /home/nextjs
 
 COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
