@@ -11,7 +11,7 @@ export default function Home() {
         {/* Grid for uniform cards */}
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           
-          <Link 
+          <Link
             href="/managed-agents"
             className="group flex aspect-video flex-col items-center justify-center rounded-xl border border-zinc-800 bg-zinc-900/50 p-6 transition-all hover:border-zinc-700 hover:bg-zinc-800/80 active:scale-[0.98]"
           >
@@ -19,7 +19,16 @@ export default function Home() {
               Managed Agents
             </span>
           </Link>
-          
+
+          <Link
+            href="/meetings"
+            className="group flex aspect-video flex-col items-center justify-center rounded-xl border border-zinc-800 bg-zinc-900/50 p-6 transition-all hover:border-zinc-700 hover:bg-zinc-800/80 active:scale-[0.98]"
+          >
+            <span className="text-lg font-medium tracking-wide text-white">
+              Meetings
+            </span>
+          </Link>
+
         </div>
       </div>
     </div>
