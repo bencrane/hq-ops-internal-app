@@ -1,5 +1,6 @@
 import "server-only";
 import type { components } from "@/lib/api-types";
+import { getJwt } from "@/lib/auth";
 
 export type AgentDefaults = components["schemas"]["AgentDefaults"];
 export type AgentDefaultsPayload = components["schemas"]["AgentDefaultsPayload"];
@@ -29,31 +30,27 @@ export type FetchResult<T> =
   | { ok: true; data: T }
   | { ok: false; status: number; error: string };
 
-function backendConfig(): { baseUrl: string; token: string } | null {
-  const { MAG_API_BASE_URL, MAG_AUTH_TOKEN } = process.env;
-  if (!MAG_API_BASE_URL || !MAG_AUTH_TOKEN) return null;
-  return { baseUrl: MAG_API_BASE_URL.replace(/\/$/, ""), token: MAG_AUTH_TOKEN };
-}
-
 async function callBackend<T>(
   path: string,
   init?: RequestInit
 ): Promise<FetchResult<T>> {
-  const cfg = backendConfig();
-  if (!cfg) {
+  const baseUrl = process.env.MAGS_API_BASE_URL;
+  if (!baseUrl) {
     return {
       ok: false,
       status: 500,
-      error: "MAG_API_BASE_URL or MAG_AUTH_TOKEN not configured in Doppler",
+      error: "MAGS_API_BASE_URL not configured in Doppler",
     };
   }
+  const jwt = await getJwt();
+  if (!jwt.ok) return { ok: false, status: jwt.status, error: jwt.error };
 
   let res: Response;
   try {
-    res = await fetch(`${cfg.baseUrl}${path}`, {
+    res = await fetch(`${baseUrl.replace(/\/$/, "")}${path}`, {
       ...init,
       headers: {
-        Authorization: `Bearer ${cfg.token}`,
+        Authorization: `Bearer ${jwt.jwt}`,
         "Content-Type": "application/json",
         ...(init?.headers ?? {}),
       },

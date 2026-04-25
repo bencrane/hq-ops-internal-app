@@ -1,19 +1,25 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getJwt, jwtErrorResponse } from "@/lib/auth";
 
 export async function GET(req: NextRequest) {
-  const { SERX_API_URL, SERX_AUTH_TOKEN } = process.env;
-  if (!SERX_API_URL || !SERX_AUTH_TOKEN) {
+  const base = process.env.SERX_API_BASE_URL;
+  if (!base) {
     return NextResponse.json(
-      { error: "SERX_API_URL or SERX_AUTH_TOKEN not configured" },
+      { error: "SERX_API_BASE_URL not configured" },
       { status: 500 }
     );
   }
+  const jwt = await getJwt();
+  if (!jwt.ok) return jwtErrorResponse(jwt);
 
   const search = req.nextUrl.search || "?limit=100&within_days=30";
-  const res = await fetch(`${SERX_API_URL}/api/meetings/upcoming${search}`, {
-    headers: { Authorization: `Bearer ${SERX_AUTH_TOKEN}` },
-    cache: "no-store",
-  });
+  const res = await fetch(
+    `${base.replace(/\/$/, "")}/api/meetings/upcoming${search}`,
+    {
+      headers: { Authorization: `Bearer ${jwt.jwt}` },
+      cache: "no-store",
+    }
+  );
   const body = await res.text();
   return new NextResponse(body, {
     status: res.status,
