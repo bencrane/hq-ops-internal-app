@@ -1,18 +1,21 @@
 import { NextResponse } from "next/server";
+import { getJwt, jwtErrorResponse } from "@/lib/auth";
 
 export async function POST() {
-  const { MAG_API_BASE_URL, MAG_AUTH_TOKEN } = process.env;
-  if (!MAG_API_BASE_URL || !MAG_AUTH_TOKEN) {
+  const base = process.env.MAGS_API_BASE_URL;
+  if (!base) {
     return NextResponse.json(
-      { error: "MAG_API_BASE_URL or MAG_AUTH_TOKEN not configured" },
+      { error: "MAGS_API_BASE_URL not configured" },
       { status: 500 }
     );
   }
+  const jwt = await getJwt();
+  if (!jwt.ok) return jwtErrorResponse(jwt);
 
-  const res = await fetch(`${MAG_API_BASE_URL}/admin/sync/anthropic`, {
+  const res = await fetch(`${base.replace(/\/$/, "")}/admin/sync/anthropic`, {
     method: "POST",
     headers: {
-      Authorization: `Bearer ${MAG_AUTH_TOKEN}`,
+      Authorization: `Bearer ${jwt.jwt}`,
       "Content-Type": "application/json",
     },
   });

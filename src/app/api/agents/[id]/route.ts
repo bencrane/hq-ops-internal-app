@@ -1,22 +1,28 @@
 import { NextResponse } from "next/server";
+import { getJwt, jwtErrorResponse } from "@/lib/auth";
 
 export async function GET(
   _req: Request,
   ctx: { params: Promise<{ id: string }> }
 ) {
   const { id } = await ctx.params;
-  const { MAG_API_BASE_URL, MAG_AUTH_TOKEN } = process.env;
-  if (!MAG_API_BASE_URL || !MAG_AUTH_TOKEN) {
+  const base = process.env.MAGS_API_BASE_URL;
+  if (!base) {
     return NextResponse.json(
-      { error: "MAG_API_BASE_URL or MAG_AUTH_TOKEN not configured" },
+      { error: "MAGS_API_BASE_URL not configured" },
       { status: 500 }
     );
   }
+  const jwt = await getJwt();
+  if (!jwt.ok) return jwtErrorResponse(jwt);
 
-  const res = await fetch(`${MAG_API_BASE_URL}/agents/${encodeURIComponent(id)}`, {
-    headers: { Authorization: `Bearer ${MAG_AUTH_TOKEN}` },
-    cache: "no-store",
-  });
+  const res = await fetch(
+    `${base.replace(/\/$/, "")}/agents/${encodeURIComponent(id)}`,
+    {
+      headers: { Authorization: `Bearer ${jwt.jwt}` },
+      cache: "no-store",
+    }
+  );
   const body = await res.text();
   return new NextResponse(body, {
     status: res.status,

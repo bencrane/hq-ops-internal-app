@@ -1,25 +1,27 @@
 import { NextResponse } from "next/server";
+import { getJwt, jwtErrorResponse } from "@/lib/auth";
 
 async function forward(
   method: "GET" | "PUT" | "DELETE",
   id: string,
   body?: string
 ) {
-  const { MAG_API_BASE_URL, MAG_AUTH_TOKEN } = process.env;
-  if (!MAG_API_BASE_URL || !MAG_AUTH_TOKEN) {
+  const base = process.env.MAGS_API_BASE_URL;
+  if (!base) {
     return NextResponse.json(
-      { error: "MAG_API_BASE_URL or MAG_AUTH_TOKEN not configured" },
+      { error: "MAGS_API_BASE_URL not configured" },
       { status: 500 }
     );
   }
+  const jwt = await getJwt();
+  if (!jwt.ok) return jwtErrorResponse(jwt);
 
-  const base = MAG_API_BASE_URL.replace(/\/$/, "");
   const res = await fetch(
-    `${base}/agents/${encodeURIComponent(id)}/defaults`,
+    `${base.replace(/\/$/, "")}/agents/${encodeURIComponent(id)}/defaults`,
     {
       method,
       headers: {
-        Authorization: `Bearer ${MAG_AUTH_TOKEN}`,
+        Authorization: `Bearer ${jwt.jwt}`,
         "Content-Type": "application/json",
       },
       body,
