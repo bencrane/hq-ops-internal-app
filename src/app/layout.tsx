@@ -5,6 +5,8 @@ import { cookies } from "next/headers";
 import { SESSION_COOKIE } from "@/lib/auth-constants";
 import { SignOutButton } from "./SignOutButton";
 import "./globals.css";
+import { OrgUserPicker } from "@/components/OrgUserPicker";
+import { getSelection } from "@/lib/selection";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -28,20 +30,25 @@ export default async function RootLayout({
 }>) {
   const jar = await cookies();
   const signedIn = Boolean(jar.get(SESSION_COOKIE)?.value);
+  const { orgId, userId } = await getSelection();
+
   return (
     <html
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-zinc-950">
-        <header className="flex items-center justify-between border-b border-zinc-900 bg-black/60 px-6 py-3 backdrop-blur">
+        <header className="flex items-center justify-between gap-4 border-b border-zinc-900 bg-black/60 px-6 py-3 backdrop-blur">
           <Link
             href="/"
             className="text-sm font-semibold tracking-wide text-white transition-colors hover:text-zinc-300"
           >
             Ops
           </Link>
-          {signedIn && <SignOutButton />}
+          <div className="flex items-center gap-3">
+            <OrgUserPicker defaultOrgId={orgId} defaultUserId={userId} />
+            {signedIn && <SignOutButton />}
+          </div>
         </header>
         <main className="flex-1">{children}</main>
       </body>

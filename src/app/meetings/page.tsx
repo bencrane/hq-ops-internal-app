@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { headers } from "next/headers";
+import { getSelection } from "@/lib/selection";
 
 type AccountSummary = { id?: string; name?: string } | null;
 type ContactSummary = {
@@ -28,7 +29,10 @@ type UpcomingResponse = {
   data?: Meeting[];
 };
 
-async function fetchUpcoming(): Promise<{
+async function fetchUpcoming(
+  orgId: string,
+  userId: string
+): Promise<{
   meetings: Meeting[];
   error: string | null;
 }> {
@@ -37,11 +41,17 @@ async function fetchUpcoming(): Promise<{
   const proto = h.get("x-forwarded-proto") ?? "http";
   const base = host ? `${proto}://${host}` : "";
 
+  const qs = new URLSearchParams({
+    org_id: orgId,
+    user_id: userId,
+    limit: "100",
+    within_days: "30",
+  });
+
   try {
-    const res = await fetch(
-      `${base}/api/meetings/upcoming?limit=100&within_days=30`,
-      { cache: "no-store" }
-    );
+    const res = await fetch(`${base}/api/meetings/upcoming?${qs}`, {
+      cache: "no-store",
+    });
     if (!res.ok) {
       const body = await res.text();
       return {
@@ -70,7 +80,8 @@ function formatDateTime(iso?: string | null): string {
 }
 
 export default async function MeetingsPage() {
-  const { meetings, error } = await fetchUpcoming();
+  const { orgId, userId } = await getSelection();
+  const { meetings, error } = await fetchUpcoming(orgId, userId);
 
   return (
     <div className="min-h-screen bg-zinc-950 p-8 sm:p-12 lg:p-16">
