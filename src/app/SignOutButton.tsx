@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { authClient } from "@/lib/auth-client";
 
 export function SignOutButton() {
   const router = useRouter();
@@ -10,7 +11,8 @@ export function SignOutButton() {
   async function onClick() {
     setBusy(true);
     try {
-      await fetch("/api/auth/sign-out", { method: "POST" });
+      await authClient.signOut();
+      await fetch("/api/auth/session", { method: "DELETE" });
       router.replace("/sign-in");
       router.refresh();
     } finally {

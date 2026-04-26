@@ -2,6 +2,7 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
+import { authClient } from "@/lib/auth-client";
 
 export default function SignInPage() {
   const router = useRouter();
@@ -17,16 +18,26 @@ export default function SignInPage() {
     setError(null);
     setSubmitting(true);
     try {
-      const res = await fetch("/api/auth/sign-in", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+      const { data, error: authError } = await authClient.signIn.email({
+        email,
+        password,
       });
-      if (!res.ok) {
-        const text = await res.text();
-        setError(text || `Sign-in failed (${res.status})`);
+
+      if (authError) {
+        setError(authError.message || "Sign-in failed");
         return;
       }
+
+      const sessionToken =
+        data?.token ?? data?.session?.token ?? data?.sessionToken;
+      if (sessionToken) {
+        await fetch("/api/auth/session", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ token: sessionToken }),
+        });
+      }
+
       router.replace(next);
       router.refresh();
     } catch (err) {
