@@ -28,8 +28,7 @@ export default function SignInPage() {
         return;
       }
 
-      const sessionToken =
-        data?.token ?? data?.session?.token ?? data?.sessionToken;
+      const sessionToken = data?.token;
       if (sessionToken) {
         await fetch("/api/auth/session", {
           method: "POST",
