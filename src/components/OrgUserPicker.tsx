@@ -166,8 +166,8 @@ export function OrgUserPicker({
       </label>
 
       {(orgsError || usersError) && (
-        <span className="text-red-400" title={orgsError ?? usersError ?? ""}>
-          ⚠
+        <span className="rounded border border-red-900/60 bg-red-950/40 px-2 py-1 font-mono text-[10px] text-red-300">
+          ⚠ {orgsError ?? usersError}
         </span>
       )}
     </div>
