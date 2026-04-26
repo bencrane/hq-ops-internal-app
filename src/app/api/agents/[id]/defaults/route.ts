@@ -1,40 +1,7 @@
-import { NextResponse } from "next/server";
-import { getJwt, jwtErrorResponse } from "@/lib/auth";
+import { backendProxy } from "@/lib/backend-proxy";
 
-async function forward(
-  method: "GET" | "PUT" | "DELETE",
-  id: string,
-  body?: string
-) {
-  const base = process.env.MAGS_API_BASE_URL;
-  if (!base) {
-    return NextResponse.json(
-      { error: "MAGS_API_BASE_URL not configured" },
-      { status: 500 }
-    );
-  }
-  const jwt = await getJwt();
-  if (!jwt.ok) return jwtErrorResponse(jwt);
-
-  const res = await fetch(
-    `${base.replace(/\/$/, "")}/agents/${encodeURIComponent(id)}/defaults`,
-    {
-      method,
-      headers: {
-        Authorization: `Bearer ${jwt.jwt}`,
-        "Content-Type": "application/json",
-      },
-      body,
-      cache: "no-store",
-    }
-  );
-  const text = await res.text();
-  return new NextResponse(text, {
-    status: res.status,
-    headers: {
-      "content-type": res.headers.get("content-type") ?? "application/json",
-    },
-  });
+function path(id: string) {
+  return `/agents/${encodeURIComponent(id)}/defaults`;
 }
 
 export async function GET(
@@ -42,7 +9,7 @@ export async function GET(
   ctx: { params: Promise<{ id: string }> }
 ) {
   const { id } = await ctx.params;
-  return forward("GET", id);
+  return backendProxy(process.env.MAGS_API_BASE_URL, path(id));
 }
 
 export async function PUT(
@@ -51,7 +18,11 @@ export async function PUT(
 ) {
   const { id } = await ctx.params;
   const body = await req.text();
-  return forward("PUT", id, body);
+  return backendProxy(process.env.MAGS_API_BASE_URL, path(id), {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body,
+  });
 }
 
 export async function DELETE(
@@ -59,5 +30,7 @@ export async function DELETE(
   ctx: { params: Promise<{ id: string }> }
 ) {
   const { id } = await ctx.params;
-  return forward("DELETE", id);
+  return backendProxy(process.env.MAGS_API_BASE_URL, path(id), {
+    method: "DELETE",
+  });
 }
