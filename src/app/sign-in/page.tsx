@@ -1,11 +1,10 @@
 "use client";
 
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { authClient } from "@/lib/auth-client";
 
 export default function SignInPage() {
-  const router = useRouter();
   const params = useSearchParams();
   const next = params.get("next") || "/";
   const [email, setEmail] = useState("");
@@ -37,8 +36,7 @@ export default function SignInPage() {
         });
       }
 
-      router.replace(next);
-      router.refresh();
+      window.location.assign(next);
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
